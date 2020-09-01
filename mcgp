@@ -1,0 +1,59 @@
+#!/bin/bash
+
+# Script para plotear en un mismo gráfico una o varias columnas vs una columna.
+# Se ejecuta en el directorio donde están los datos: cgp FILE col_1 col_2 ....
+
+
+# Chequeo si se pasaron argumentos
+if [ $# -eq 0 ]
+then
+    echo "No se dieron argumentos"
+    exit
+elif [ $# -lt 3 ]
+then
+    echo "Argumentos insuficientes (deben ser al menos 3)"
+    exit
+fi
+
+
+# Archivo a plotear.
+File=$1
+Name=${File:0:$((${#File}-4))}
+
+
+# Columnas a plotear. Las meto todas en un array.
+col_x=$2
+
+declare -a cols_y=("${@:3:$#}")
+
+
+# Recorro las columnas a plotear.
+for i in $(seq 0 $(( ${#cols_y[@]}-1 )))
+do	   
+    Plot[$i]="'$File' u $col_x:${cols_y[$i]} w lp,"
+done
+
+
+# Armo string para mandarle al gnuplot.
+Plot="p ${Plot[@]}"
+
+
+# Ejecuto gnuplot.
+gnuplot -p -e "
+set term pdfcairo enhanced font 'Verdana,10';
+set output '$Name.pdf';
+
+set xtics nomirror;
+set ytics nomirror;
+set mxtics;
+set mytics;
+set grid xtics ytics;
+set border linewidth 2;
+
+$Plot"
+
+
+# Corto, mando y borro
+pdfcrop $Name.pdf $Name.pdf
+mailto $Name.pdf
+find -name $Name.pdf -delete

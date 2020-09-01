@@ -1,0 +1,52 @@
+#!/bin/bash
+
+# Script para plotear uno o más archivos en un sólo gráfico.
+# De todos se plotean las mismas dos columnas: col_1 col_2
+# Se ejecuta en el directorio donde están los datos: gp FILE_1 FILE_2 FILE_3 ... col_1 col_2
+
+
+# Chequeo si se pasaron argumentos
+if [ $# -eq 0 ]
+then
+    echo "No se dieron argumentos"
+    exit
+elif [ $# -lt 3 ]
+then
+    echo "Argumentos insuficientes (deben ser al menos 3)"
+    exit
+fi
+
+
+# Archivos a plotear. Los meto todos en un array.
+declare -a Files=("${@:1:$(( $#-2 ))}")
+
+
+# Columnas a plotear
+col_1=$(( $#-1 ))
+col_1=${!col_1}
+
+col_2=$#
+col_2=${!col_2}
+
+
+# Recorro los archivos a plotear, pongo los nombres entre comillas simples y les voy poniendo las columnas.
+for i in ${!Files[@]}
+do	   
+    Plot[$i]="'${Files[$i]}' u (\$$col_1):(\$$col_2) w lp,"
+done
+
+
+# Armo string para mandarle al gnuplot.
+Plot="p ${Plot[@]}"
+
+
+# Ejecuto gnuplot.
+gnuplot -p -e "
+set xtics nomirror;
+set ytics nomirror;
+set mxtics;
+set mytics;
+set grid xtics ytics;
+set border linewidth 2;
+
+$Plot"

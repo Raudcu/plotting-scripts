@@ -1,0 +1,53 @@
+#!/bin/bash
+
+# Script para fitear datos con una recta y plotear. 
+# Se ejecuta en el directorio donde están los datos: fit FILE col_1 col_2
+# Puede además, agregarse un intervalo: fit FILE col_1 col_2 min max
+
+
+# Chequeo si se pasaron argumentos
+if [ $# -eq 0 ]
+then
+    echo "No se dieron argumentos"
+    exit
+elif [ $# -lt 3 ]
+then
+    echo "Argumentos insuficientes (deben ser 3 o 5)"
+    exit
+fi
+
+
+# Ejecuto gnuplot
+if [ $# -eq 5 ]
+then
+    gnuplot -p -e "
+set xtics nomirror;
+set ytics nomirror;
+set mxtics;
+set mytics;
+set grid xtics ytics;
+set border linewidth 2;
+
+f(x) = a*x + b; 
+fit [$4:$5] f(x) '$1' u (log(\$$2)):(log(\$$3)) via a, b; 
+
+p [$4:$5] '$1' u (log(\$$2)):(log(\$$3)) w lp, f(x) lw 2"
+
+else
+    gnuplot -p -e "
+set xtics nomirror;
+set ytics nomirror;
+set mxtics;
+set mytics;
+set grid xtics ytics;
+set border linewidth 2;
+
+f(x) = a*x + b; 
+fit f(x) '$1' u (log(\$$2)):(log(\$$3)) via a, b; 
+
+p '$1' u (log(\$$2)):(log(\$$3)) w lp, f(x) lw 2"
+fi
+
+
+# Borro el log que genera gnuplot
+rm -f 'fit.log'

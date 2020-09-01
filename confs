@@ -1,0 +1,112 @@
+#!/usr/bin/gnuplot -c
+
+# Script para plotear configuraciones de red Kagomé.
+# Se ejecuta en el directorio donde están los datos: confk FILE
+
+
+# Seteo terminal
+set term pdfcairo enhanced font 'Verdana,10'
+
+
+# Parametros
+L = strstrt(ARG1,"L")
+L = int(ARG1[L+1:L+3])
+
+
+# Name
+FILE = ARG1
+
+len = strlen(ARG1)
+NAME = ARG1[1:len-4]
+
+set output NAME.'.pdf'
+
+
+# Detalles del plot
+set nokey
+set xrange [-1:L]
+set yrange [-1:L]
+unset xtics
+unset ytics
+unset xlabel
+unset ylabel
+set border linewidth 2
+set size ratio -1
+
+
+# Red
+do for [i=0:L-1] {
+	set arrow from i,-1 to i,L nohead dt 3 lc rgb "#A9A9A9" lw 0.1
+	set arrow from -1,i to L,i nohead dt 3 lc rgb "#A9A9A9" lw 0.1
+}
+
+
+set multiplot
+
+
+# Plot 1:
+set lmargin at screen 0.05
+set rmargin at screen 0.95
+set bmargin at screen 0.05
+set tmargin at screen 0.95
+
+
+## Rango de J
+system("sed -E '/(#|^\s*$)/d' ".FILE." >> temp.dat") # borro líneas vacías y que contengan #
+
+Max1 = system("awk 'NR==1 {max=$5; next} max < $5 {max=$5} END {print max}' temp.dat")
+Min1 = system("awk 'NR==1 {min=$5; next} min > $5 {min=$5} END {print min}' temp.dat")
+
+Max2 = system("awk 'NR==1 {max=$6; next} max < $6 {max=$6} END {print max}' temp.dat")
+Min2 = system("awk 'NR==1 {min=$6; next} min > $6 {min=$6} END {print min}' temp.dat")
+
+Max3 = system("awk 'NR==1 {max=$7; next} max < $7 {max=$7} END {print max}' temp.dat")
+Min3 = system("awk 'NR==1 {min=$7; next} min > $7 {min=$7} END {print min}' temp.dat")
+
+Max4 = system("awk 'NR==1 {max=$8; next} max < $8 {max=$8} END {print max}' temp.dat")
+Min4 = system("awk 'NR==1 {min=$8; next} min > $8 {min=$8} END {print min}' temp.dat")
+
+system("rm -f 'temp.dat'")
+
+MaxA = Max1>=Max2 ? Max1 : Max2
+MinA = Min1<=Min2 ? Min1 : Min2
+MaxB = Max3>=Max4 ? Max3 : Max4
+MinB = Min3<=Min4 ? Min3 : Min4
+
+Max = MaxA>=MaxB ? MaxA : MaxB
+Min = MinA<=MinB ? MinA : MinB
+
+
+## Paleta de colores
+set loadpath '~/Dropbox/Documentos/gnuplot/palettes'
+load 'prgn.pal'
+
+set cbrange [Min:Max] 
+
+set view map
+
+set label sprintf('J_{ij}/|J_0|') at L+0.3,L+0.6
+
+
+## Plot
+sp FILE u 9:10:(0.0):5 w p pt 7 ps 0.3 palette
+rep FILE u 11:12:(0.0):6 w p pt 7 ps 0.3 palette
+rep FILE u 13:14:(0.0):7 w p pt 7 ps 0.3 palette
+rep FILE u 15:16:(0.0):8 w p pt 7 ps 0.3 palette 
+
+
+
+# Plot 2:
+set lmargin at screen 0.23
+
+## Plot
+p FILE using 2:(($3)-0.2*($4)):(0):(0.4*($4)):(8355967.5-8355712.5*($4)) w vectors head size screen 0.1,2,45 filled lw 1 lc rgb var
+
+
+unset multiplot
+
+set output
+
+
+system 'pdfcrop ./'.NAME.'.pdf ./'.NAME.'.pdf'
+system 'evince ./'.NAME.'.pdf &'

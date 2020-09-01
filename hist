@@ -1,0 +1,54 @@
+#!/bin/bash
+
+# Script para hacer histogramas. 
+# Se ejecuta en el directorio donde están los datos: hist FILE col_1 col_2 ...
+
+
+# Chequeo si se pasaron argumentos
+if [ $# -eq 0 ]
+then
+    echo "No se dio argumentos"
+    exit
+elif [ $# -lt 2 ]
+then
+    echo "Argumentos insuficientes (deben ser al menos 2)"
+    exit
+fi
+
+
+# Uso sed (borro líneas vacías y que contengan #) y con awk junto las columnas en un solo archivo
+for i in ${@:2}
+do	   
+    sed -E '/(#|^\s*$)/d' $1 | awk '{print $'$i'}' >> temp.dat 
+done
+
+
+# Uso awk para obtener cantidad de valores, máximo y mínimo
+N=$( awk 'END {print NR}' temp.dat )
+Max=$( awk 'NR==1 {max=$1; next} max < $1 {max=$1} END {print max}' temp.dat)
+Min=$( awk 'NR==1 {min=$1; next} min > $1 {min=$1} END {print min}' temp.dat)
+
+
+# Ejecuto gnuplot
+gnuplot -p -e "
+Nbins=ceil(sqrt($N));
+binwidth=($Max-$Min)/Nbins;
+bin(x,width)=width*(floor(x/width)+0.5);
+
+set style fill transparent solid 0.6;
+set boxwidth binwidth;
+
+unset key;
+set xrange [$Min-binwidth:$Max+binwidth];
+set tics out;
+set xtics nomirror;
+set ytics nomirror;
+set mxtics;
+set mytics;
+set border linewidth 2;
+
+p 'temp.dat' u (bin(\$1, binwidth)):(1.0) smooth freq with boxes lc 6"
+
+
+# Borro el archivo temporal
+rm -f 'temp.dat'

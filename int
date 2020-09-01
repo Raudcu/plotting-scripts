@@ -1,0 +1,104 @@
+#!/usr/bin/env python3
+
+'''
+Script para integrar y plotear uno o más archivos en un sólo gráfico.
+De todos se integran y plotean las mismas dos columnas: col_1 col_2
+La numeración que se considera para las columnas es: 1, 2, 3,... (comienza en 1 y no en 0)
+Se ejecuta en el directorio donde están los datos: int FILE_1 FILE_2 FILE_3 ... col_1 col_2
+'''
+
+# General setup
+import matplotlib.pyplot as plt
+import matplotlib.ticker as mtick
+
+import pandas as pd
+import sys
+import os.path
+
+from scipy.integrate import cumtrapz
+from scipy.integrate import trapz
+
+
+# rc Paramters
+plt.rc('text', usetex=True)
+plt.rc('font', family='serif',size=14)
+mtick.rcParams['axes.formatter.limits']=[-2, 5]
+
+
+# Read
+def Read(filename):
+    return pd.read_csv(filename, sep='\s+', float_precision='high')
+
+    
+# Main
+if __name__ == "__main__":
+    # Columnas
+    col_1 = int(sys.argv[-2])-1
+    col_2 = int(sys.argv[-1])-1
+    
+
+    # Rango
+    rango = input("Rango [Enter para rango completo] = ").split()
+
+    if rango and len(rango)>2:
+        sys.exit("\n***ERROR: Ingrese a lo sumo dos valores***\n")
+    
+    else:
+        min_value = float(rango[0]) if rango else []
+        max_value = float(rango[1]) if (rango and len(rango)==2) else []
+
+
+    # Axes
+    fig, ax = plt.subplots()
+    
+
+    # Plots
+    for filename in sys.argv[1:-2]:
+        # Read
+        if os.path.isfile(filename):
+            df = Read(filename)
+        else:
+            sys.exit("\n***ERROR: El archivo " + filename + " no existe***\n")
+
+        
+        # Sort
+        df.sort_values(list(df)[col_1], axis=0, ascending=True, inplace=True)
+        
+    
+        # Rango
+        if min_value != []:
+
+            if max_value != []:
+
+                if max_value <= min_value: 
+                    sys.exit("\n***ERROR: El máximo no puede ser menor al mínimo***\n")
+                else:
+                    df = df[(df.iloc[:,col_1] >= min_value) & (df.iloc[:,col_1] <= max_value)]
+                             
+            else:
+                df = df[(df.iloc[:,col_1] >= min_value)]
+
+
+        # Label
+        label = filename[:-4]
+        label = ''.join([' ' if char=='_' else char for char in list(label)])
+
+
+        # Integration
+        df['Integral'] = cumtrapz(df.iloc[:,col_2], df.iloc[:,col_1], initial=0)
+        print("\nÁrea bajo la curva de "+label+" = {:f}\n".format(trapz(df.iloc[:,col_2], df.iloc[:,col_1])))
+ 
+
+        # Plot
+        ax.plot(df.iloc[:,col_1], df['Integral'], label=label)
+        
+
+    # Legend, ticks and grid
+    ax.legend()
+    ax.minorticks_on()
+    ax.grid(b=True, which='major', axis='both', color='C7', linestyle='--')
+    
+
+    # Show
+    plt.subplots_adjust(left=0.1, right=0.95, bottom=0.1, top=0.95)
+    plt.show()

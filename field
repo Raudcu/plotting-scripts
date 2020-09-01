@@ -1,0 +1,90 @@
+#!/usr/bin/env python3
+
+'''
+Script para calcular los parámetros de un Coil, entre los que se incluye el Campo magnético en su centro, a partir de las dimensiones que se ingresan por pantalla.
+'''
+
+# General setup
+import numpy as np
+
+
+# Funciones
+
+# Número de vueltas en la capa i. Se considera que cada vuelta calza en el zurzo entre dos vueltas de la capa anterior.
+def Ni(L, d, i):
+    return int(L/(d/1000)) - (1-i%2)
+
+
+# Diámetro de la capa i en milímetros. De nuevo se considera que cada vuelta calza en el zurco entre dos vueltas de la capa anterior.
+def Di(i, D_in, d):
+    return D_in + (d/1000) + (i-1)*np.sqrt(3)*(d/1000)
+
+
+# Longitud del alambre en la capa i en milímetros. Se modela la capa como una espiral.
+def Li(L, D_in, d, i):
+    return np.pi * Di(i,D_in,d) * Ni(L,d,i) * np.sqrt( 1 + ( (d/1000) / (np.pi*Di(i,D_in,d)) )**2 )
+    
+
+# Número total de vueltas.
+def N(L, d, M):
+    return sum( [Ni(L, d, i+1) for i in range(M)] )
+
+
+# Largo total del alambre en metros.
+def Long(L, D_in, d, M):
+    return sum( [Li(L, D_in, d, i+1) for i in range(M)] ) / 1000
+
+
+# Resistencia del Coil a temperatura ambiente (RT) en Ohm. Se usa el diámetro del alambre sin aislante 'd_bare'.
+def R(L, D_in, d, d_bare, M):
+    return 0.0171 * Long(L,D_in,d,M) / (np.pi*((d_bare/2)/1000)**2)
+
+
+# Campo en el centro de un Coil de largo L y diámetro interno D_in, en Teslas.
+def B(L, D_in, icurr, N):
+    mu_cero = 4*np.pi*1e-7
+
+    return (mu_cero * icurr * N) / np.sqrt(L**2 + D_in**2)
+
+
+# Campo de la capa i.
+def Bi(L, D_in, d, icurr, i):
+    return B(L, Di(i,D_in,d), icurr, Ni(L,d,i))
+
+
+# Campo total en gauss.
+def Btot(L, D_in, d, icurr, M):
+    return sum( [Bi(L/1000,D_in/1000,d/1000,icurr,i+1) for i in range(M)] ) * 10000
+
+                 
+# Main
+if __name__ == "__main__":
+
+    print("\n***PARÁMETROS:")
+    
+    # Capas
+    M = int(input("Capas = "))
+
+    # Longitud del Coil
+    L = float(input("Longitud (mm) = "))
+   
+    # Diámetro interno
+    D_in = float(input("Diámetro interno (mm) = "))
+
+    # Diámetro del alambre
+    d = float(input("Diámetro del alambre (um) = "))
+
+    # Diámetro del bare
+    d_bare = float(input("Diámetro del alambre bare (um) = "))
+
+    # Corriente
+    icurr = float(input("Corriente RMS (mA) = "))
+
+
+    # Resultados
+    print("\n\n***RESULTADOS:")
+    print("\n*Número de vueltas = {:d}".format( N(L,d,M) ))
+    print("\n*Longitud alambre = {:f} m".format( Long(L,D_in,d,M) ))
+    print("\n*Diámetro externo = {:f} mm".format( Di(M,D_in,d) ))
+    print("\n*Resistencia = {:f} Ohms".format( R(L,D_in,d,d_bare,M) ))
+    print("\n*Campo (RMS) = {:f} gauss\n".format( Btot(L,D_in,d,icurr/1000,M) ))
