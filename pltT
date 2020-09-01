@@ -1,37 +1,37 @@
 #!/usr/bin/env python3
 
-'''
+"""
 Script para plotear uno o más serie de datos en un sólo gráfico.
 De todos se plotean los voltajes en función de la temperatura.
 Se ejecuta en el directorio donde están los datos: pltT FILE_1 FILE_2 FILE_3 ...
-'''
+"""
 
 
 # General setup
 import matplotlib.pyplot as plt
-import matplotlib.ticker as mtick
-    
+
 import pandas as pd
 import sys
 import os.path
 
 
 # rc Parameters
-plt.rc('text', usetex=True)
-plt.rc('font', family='serif',size=14)
-mtick.rcParams['axes.formatter.limits']=[-2, 5]
+plt.rc("font", family="serif", size=12)
+plt.rcParams["axes.formatter.limits"] = [-2, 5]
 
 
 # Read
 def Read(filename):
-    df = pd.read_csv(filename, sep=r'\s+', skiprows=0, float_precision='high', header=None)
-    
-    if df.shape[1]==8:
-        df.columns = ['#', 'Hora', 'Temp', 'B', 'Hall', ' ', 'X', 'Y']
-    elif df.shape[1]==9:
-        df.columns = ['#', 'Hora', 'Temp', 'B', 'Hall', ' ', 'X', 'Y', 'f'] 
+    df = pd.read_csv(
+        filename, sep=r"\s+", skiprows=0, float_precision="high", header=None
+    )
 
-    df['B_Hall'] = df.Hall/0.00535
+    if df.shape[1] == 8:
+        df.columns = ["#", "Hora", "Temp", "B", "Hall", " ", "X", "Y"]
+    elif df.shape[1] == 9:
+        df.columns = ["#", "Hora", "Temp", "B", "Hall", " ", "X", "Y", "f"]
+
+    df["B_Hall"] = df.Hall / 0.00535
 
     return df
 
@@ -40,54 +40,55 @@ def Read(filename):
 def PlotT(axes, df, filename):
     # Label
     label = filename[:-4]
-    label = ''.join([' ' if char=='_' else char for char in list(label)])
+    label = "".join([" " if char == "_" else char for char in list(label)])
 
-    #X:
+    # X:
     ax = axes[0]
     ax.plot(df.Temp, df.X, label=label)
 
-    #Y:
+    # Y:
     ax = axes[1]
     ax.plot(df.Temp, df.Y, label=label)
 
 
 def Labels(axes):
-    #X:
+    # X:
     ax = axes[0]
-    ax.grid(b=True, which='major', axis='both', color='C7', linestyle='--')
-    
-    ax.set_ylabel('$V_X$ (V)')
+    ax.grid(b=True, which="major", axis="both", color="C7", linestyle="--")
+
+    ax.set_ylabel("$V_X$ (V)")
     ax.legend()
 
     ax.minorticks_on()
-    ax.axes.tick_params(axis='y', which='major', length=3.5, width=2)
-    ax.axes.tick_params(axis='y', which='minor', length=2.5, width=1)
+    ax.axes.tick_params(axis="y", which="major", length=3.5, width=2)
+    ax.axes.tick_params(axis="y", which="minor", length=2.5, width=1)
 
-    
-    #Y:
+    # Y:
     ax = axes[1]
-    ax.grid(b=True, which='major', axis='both', color='C7', linestyle='--')
-    
-    ax.set_xlabel('T (K)')
-    ax.set_ylabel('$V_Y$ (V)')
+    ax.grid(b=True, which="major", axis="both", color="C7", linestyle="--")
+
+    ax.set_xlabel("T (K)")
+    ax.set_ylabel("$V_Y$ (V)")
 
     ax.minorticks_on()
-    ax.axes.tick_params(axis='x', which='major', direction='inout', length=6, width=2, top=True)
-    ax.axes.tick_params(axis='x', which='minor', direction='inout', length=3.5, width=1, top=True)
-    ax.axes.tick_params(axis='y', which='major', length=3.5, width=2)
-    ax.axes.tick_params(axis='y', which='minor', length=2.5, width=1)
+    ax.axes.tick_params(
+        axis="x", which="major", direction="inout", length=6, width=2, top=True
+    )
+    ax.axes.tick_params(
+        axis="x", which="minor", direction="inout", length=3.5, width=1, top=True
+    )
+    ax.axes.tick_params(axis="y", which="major", length=3.5, width=2)
+    ax.axes.tick_params(axis="y", which="minor", length=2.5, width=1)
 
-    
+
 # Main
 if __name__ == "__main__":
     # Chequeo que se haya pasado suficientes argumentos
     if len(sys.argv) < 2:
         sys.exit("\n***ERROR: Ingrese al menos el nombre de un archivo***\n")
 
-
     # Axes
     fig, axes = plt.subplots(2, 1, sharex=True)
-
 
     # Plots
     for filename in sys.argv[1:]:
@@ -97,15 +98,14 @@ if __name__ == "__main__":
         else:
             sys.exit("\n***ERROR: El archivo " + filename + " no existe***\n")
 
-
         # Plot
         PlotT(axes, df, filename)
 
-        
     # Labels
     Labels(axes)
 
-
     # Show
-    plt.subplots_adjust(left=0.13, right=0.98, bottom=0.12, top=0.95, wspace=0, hspace=0)
+    plt.subplots_adjust(
+        left=0.13, right=0.98, bottom=0.12, top=0.95, wspace=0, hspace=0
+    )
     plt.show()

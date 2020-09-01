@@ -17,8 +17,7 @@ import os.path
 
 
 # rc Parameters
-plt.rc("text", usetex=True)
-plt.rc("font", family="serif", size=14)
+plt.rc("font", family="serif", size=12)
 plt.rcParams["axes.formatter.limits"] = [-2, 5]
 
 
