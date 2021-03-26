@@ -75,7 +75,7 @@ if __name__ == "__main__":
 
                 if max_value <= min_value:
                     sys.exit(
-                        "\n***ERROR: El máximo" "no puede ser menor al mínimo***\n"
+                        "\n***ERROR: El máximo no puede ser menor al mínimo***\n"
                     )
                 else:
                     df = df[(col_x >= min_value) & (col_x <= max_value)]
